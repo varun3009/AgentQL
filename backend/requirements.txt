@@ -1,0 +1,11 @@
+# Dependencies for multi-agent-sql
+# Install with: python -m pip install -r requirements.txt
+
+langgraph
+langchain-core
+langchain-groq
+pydantic
+langchain_ollama
+python-dotenv
+flask
+flask-cors
