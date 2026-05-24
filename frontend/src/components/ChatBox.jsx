@@ -1,29 +1,33 @@
 import { useState } from "react";
 import { sendMessage, resumeChat } from "../api";
-import { statusEnum } from "../enums/llm_response";
+import { statusEnum, roleEnum } from "../enums/llm_response";
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import FaceIcon from '@mui/icons-material/Face';
 import SendIcon from '@mui/icons-material/ArrowUpward';
 
-export default function ChatBox() {
+export default function ChatBox({ threadId, setThreadId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [threadId, setThreadId] = useState(null);
   const [waitingForResume, setWaitingForResume] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const handleSend = async () => {
 
-    console.log("User Input:", input);
     if (!input.trim()) return;
 
     const userMessage = {
-      role: "user",
+      role: roleEnum.USER,
       content: input,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
 
+
+    setMessages((prev) => [...prev, userMessage]);
+    
+
+    setInput("");
     try {
+      setIsSending(true);
       let response;
 
       if (waitingForResume) {
@@ -36,12 +40,13 @@ export default function ChatBox() {
 
       if (!threadId && response.thread_id) {
         setThreadId(response.thread_id);
+        localStorage.setItem("threadId", response.thread_id);
       }
 
       setMessages((prev) => [
           ...prev,
           {
-            role: "assistant",
+            role: roleEnum.AGENT,
             content: response.response,
           },
         ]);
@@ -50,17 +55,17 @@ export default function ChatBox() {
       setMessages((prev) => [
         ...prev,
         {
-          role: "assistant",
+          role: roleEnum.AGENT,
           content: "Server error.",
         },
       ]);
     }
-
-    setInput("");
+    finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyDown = async (event) => {
-    console.log("Key Pressed:", event.key);
     if (event.key === 'Enter') {
       await handleSend();
     }
@@ -76,7 +81,48 @@ export default function ChatBox() {
           <div className="card h-100" id="chat2">
             <div className="card-body" data-mdb-perfect-scrollbar-init style={{position: "relative", height: "60vh"}}>
 
-              <div className="d-flex flex-row justify-content-start">
+                <div>
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`d-flex flex-row justify-content-${
+                      msg.role === roleEnum.USER ? "end" : "start"
+                    }`}
+                  >
+                    {(msg.role === roleEnum.AGENT && (
+                      <SmartToyIcon style={{ width: "40px", height: "40px" }} />
+                    ))}
+
+                    <div>
+                      <p
+                        className={`small p-2 ${
+                          msg.role === roleEnum.USER
+                            ? "text-white bg-primary"
+                            : "bg-body-tertiary"
+                        } rounded-3 ms-3 mb-1 text-start`}
+                      >
+                        {msg.content}
+                      </p>
+
+                      <p
+                        className={`small ms-3 mb-3 rounded-3 text-muted d-flex justify-content-${
+                          msg.role === roleEnum.USER ? "end" : "start"
+                        }`}
+                      >
+                        {new Date().toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    {(msg.role === roleEnum.USER && (
+                      <FaceIcon className="ms-3" style={{ width: "40px", height: "40px" }} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              {/* <div className="d-flex flex-row justify-content-start">
                 <SmartToyIcon style={{width: "40px", height: "100%"}}/>
                 <div>
                   <p className="small p-2 ms-3 mb-1 rounded-3 bg-body-tertiary">What are you doing
@@ -93,13 +139,13 @@ export default function ChatBox() {
                   <p className="small me-3 mb-3 rounded-3 text-muted d-flex justify-content-end">00:06</p>
                 </div>
                 <FaceIcon style={{width: "40px", height: "100%"}}/>
-              </div>
+              </div> */}
             </div>
             <div className="card-footer text-muted d-flex justify-content-start align-items-center p-3">
               <FaceIcon className="me-3" style={{width: "40px", height: "100%"}}/>
               <input type="text" className="form-control form-control-lg" id="exampleFormControlInput1"
-                placeholder="Type message"/>
-              <button className="send-button ms-2" id="button-addon2" disabled="true" onClick={handleSend}><SendIcon style={{width: "20px", height: "20px", color:"black"}}/></button>
+                placeholder="Type message" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}/>
+              <button className="send-button ms-2" id="button-addon2" onClick={handleSend} disabled={isSending}><SendIcon style={{width: "20px", height: "20px", color:"black"}}/></button>
             </div>
           </div>
 

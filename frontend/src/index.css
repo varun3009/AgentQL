@@ -47,6 +47,38 @@ body {
     linear-gradient(135deg, #06111f 0%, #0b1728 52%, #08111d 100%);
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.72) rgba(15, 23, 42, 0.72);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(15, 23, 42, 0.72);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(34, 211, 238, 0.95), rgba(52, 211, 153, 0.9));
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.28);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, #67e8f9, #6ee7b7);
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgba(15, 23, 42, 0.72);
+}
+
 #root {
   width: 100%;
   max-width: 100%;
@@ -173,4 +205,3 @@ aside .nav-button {
   opacity: 0.5;
   cursor: not-allowed;
 }
-

@@ -1,3 +1,5 @@
+import LaunchIcon from '@mui/icons-material/Launch';
+
 export default function Topbar({ activePage, setActivePage }) {
   return (
     <nav className="navbar bg-light border-bottom px-4 w-100 justify-space-between">
@@ -25,7 +27,16 @@ export default function Topbar({ activePage, setActivePage }) {
           Dataset
         </button>
       </div>
-      <span>GitHub</span>
+      <a
+        className="nav-button d-flex align-items-center gap-2"
+        href="https://github.com/varun3009/AgentQL/tree/main"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open project on GitHub (opens in new tab)"
+      >
+        <LaunchIcon fontSize="small" />
+        GitHub
+      </a>
     </nav>
   );
 }
