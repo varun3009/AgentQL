@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://127.0.0.1:6969";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const sendMessage = async (message, threadId = null) => {
   const response = await axios.post(`${BASE_URL}/chat`, {
@@ -26,7 +26,7 @@ export const fetchMessages = async (threadId, page = 1, page_size = 15) => {
         const response = await axios.get(`${BASE_URL}/history/${threadId}`, {
             params: { page, page_size }
         });
-        console.log("Fetched messages:", response.data);
+        // console.log("Fetched messages:", response.data);
         return response.data || [];
     }
     catch(err) {

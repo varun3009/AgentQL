@@ -2,8 +2,8 @@ import ChatIcon from "@mui/icons-material/Chat";
 import StorageIcon from "@mui/icons-material/Storage";
 
 export default function Sidebar({ activePage, setActivePage }) {
-    console.log("Active Page:", activePage);
-    console.log("Set Active Page Function:", setActivePage);
+    // console.log("Active Page:", activePage);
+    // console.log("Set Active Page Function:", setActivePage);
   return (
     <aside className="bg-dark text-white p-3 d-flex flex-column justify-content-center" style={{ width: "60px" }}>
 

@@ -14,7 +14,7 @@ export default function Dataset({ threadId }) {
     async function fetchTablesL(threadId) {
       try {
         const tables = await fetchTables(threadId);
-        console.log("Fetched tables:", tables);
+        // console.log("Fetched tables:", tables);
         setTables(tables);
       }
       catch (err) {
@@ -30,7 +30,7 @@ export default function Dataset({ threadId }) {
   async function handleTableClick(tableName) {
     try {
       const data = await fetchTableData(threadId, tableName);
-      console.log(`Data for table ${tableName}:`, data);
+      // console.log(`Data for table ${tableName}:`, data);
       setSelectedTableData(data);
       setSelectedTableName(tableName);
     }
