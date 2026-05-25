@@ -4,6 +4,28 @@ import { statusEnum, roleEnum } from "../enums/llm_response";
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import FaceIcon from '@mui/icons-material/Face';
 import SendIcon from '@mui/icons-material/ArrowUpward';
+import TableChartIcon from '@mui/icons-material/TableChart';
+
+const quickChatTemplates = [
+  {
+    title: "Teacher roster",
+    label: "Create teacher table",
+    prompt:
+      "Create a table named teacher for storing teacher records. The table should include an id column with integer type as the primary identifier, a name column with string/text type for the teacher's full name, and sensible constraints so id cannot be null and each teacher has a unique id. After creating the table, show me the final schema.",
+  },
+  {
+    title: "Student directory",
+    label: "Create student table",
+    prompt:
+      "Create a table named student for maintaining student information. Include an id column with integer type as the primary identifier, a name column with string/text type for the student's full name, an email column with string/text type that should be unique, and a grade column with integer type. Add appropriate not-null constraints for important fields and show me the resulting table schema.",
+  },
+  {
+    title: "Course catalog",
+    label: "Create course table",
+    prompt:
+      "Create a table named course for storing course catalog data. Include an id column with integer type as the primary identifier, a title column with string/text type for the course name, a code column with string/text type that should be unique, and credits as an integer column. Add constraints for required values, then return the created schema in a clear format.",
+  },
+];
 
 export default function ChatBox({ threadId, setThreadId }) {
   const [messages, setMessages] = useState([]);
@@ -13,9 +35,9 @@ export default function ChatBox({ threadId, setThreadId }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [isscroll, setIsScroll] = useState(false);
 
 const chatBodyRef = useRef(null);
+const isScrollRef = useRef(false);
 
   const handleSend = async () => {
 
@@ -62,13 +84,14 @@ const chatBodyRef = useRef(null);
         ]);
         setWaitingForResume(response.status === statusEnum.INTERRUPT);
     } catch (err) {
+      console.error("Failed to send message:", err);
       setMessages((prev) => [
         ...prev,
         {
           role: roleEnum.AGENT,
           content: "Server error.",
           status: statusEnum.COMPLETED,
-          timestamp: response.timestamp || new Date(),
+          timestamp: new Date(),
         },
       ]);
     }
@@ -81,6 +104,10 @@ const chatBodyRef = useRef(null);
     if (event.key === 'Enter') {
       await handleSend();
     }
+  };
+
+  const handleTemplateClick = (template) => {
+    setInput(template.prompt);
   };
 
   const scrollToBottom = () => {
@@ -102,7 +129,7 @@ const chatBodyRef = useRef(null);
   }, [threadId]);
 
   useEffect(() =>{
-    if(isscroll) {
+    if(isScrollRef.current) {
       return;
     }
     setTimeout(() => {
@@ -144,9 +171,11 @@ const chatBodyRef = useRef(null);
     if (!container) return;
 
     if (container.scrollTop === 0) {
-      setIsScroll(true);
+      isScrollRef.current = true;
       loadMoreMessages();
-      setTimeout(() => setIsScroll(false), 100);
+      setTimeout(() => {
+        isScrollRef.current = false;
+      }, 100);
     }
   };
 
@@ -172,6 +201,31 @@ const chatBodyRef = useRef(null);
                 <div className="text-center text-muted small mb-2">
                   Loading older messages...
                 </div>
+              )}
+
+              {!threadId && messages.length === 0 && (
+                <section className="quick-chat-panel" aria-label="Quick chat templates">
+                  <div className="quick-chat-panel__header">
+                    <span>Start with a template</span>
+                    <h4>Build your first dataset faster</h4>
+                  </div>
+
+                  <div className="quick-chat-grid">
+                    {quickChatTemplates.map((template) => (
+                      <button
+                        key={template.title}
+                        className="quick-chat-card"
+                        type="button"
+                        onClick={() => handleTemplateClick(template)}
+                      >
+                        <TableChartIcon fontSize="small" />
+                        <span>{template.title}</span>
+                        <strong>{template.label}</strong>
+                        <p>{template.prompt}</p>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               )}
 
               <div>

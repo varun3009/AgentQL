@@ -34,3 +34,25 @@ export const fetchMessages = async (threadId, page = 1, page_size = 15) => {
         return [];
     }
 };
+
+export const fetchTables = async (threadId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/tables/${threadId}`);
+    return response.data.tables || [];
+  }
+  catch(err) {
+    console.error("Failed to fetch tables:", err);
+    return [];
+  };
+}
+
+export const fetchTableData = async (threadId, tableName) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/tables/${threadId}/${tableName}`);
+    return response.data || [];
+  }
+  catch(err) {
+    console.error("Failed to fetch tables:", err);
+    return [];
+  };
+}

@@ -27,6 +27,9 @@ You are given:
 - conversation history
 - latest user request
 
+Current database schema:
+{schema}
+
 Rules:
 
 For CREATE TABLE:
@@ -36,6 +39,8 @@ For CREATE TABLE:
 For INSERT:
 - Ensure table exists.
 - Ensure values are provided.
+- If the schema has exactly one table and the request clearly refers to that table,
+  do not ask for the table name.
 
 For UPDATE:
 - Ensure table exists.

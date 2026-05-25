@@ -22,6 +22,9 @@ You are given:
 - user request
 - clarified conversation context
 
+Current database schema:
+{schema}
+
 Rules:
 
 - Generate ONLY SQLite-compatible SQL.

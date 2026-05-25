@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ChatBox from "./components/ChatBox";
 import Sidebar from "./components/SideBar";
 import Topbar from "./components/TopBar";
@@ -6,14 +6,7 @@ import Dataset from "./components/Dataset";
 
 function App() {
   const [activePage, setActivePage] = useState("chat");
-  const [threadId, setThreadId] = useState(null);
-  
-  useEffect(() => {
-    let storedThreadId = localStorage.getItem("threadId");
-    if (storedThreadId) {
-      setThreadId(storedThreadId);
-    }
-  },[])
+  const [threadId, setThreadId] = useState(() => localStorage.getItem("threadId"));
 
   return (
     <div className="container-fluid px-0 d-flex flex-column" style={{ height: "100vh" }}>

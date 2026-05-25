@@ -6,6 +6,7 @@ from main import graph
 from enums.llm_status import LLMStatus, Role
 from flask_cors import CORS
 from chat_history import put_chat_history, get_chat_history
+from chat_tables import get_chat_tables, get_chat_table_schema
 
 
 app = Flask(__name__)
@@ -121,7 +122,7 @@ def history(thread_id):
 
     history.sort(key=lambda x: x[3])
 
-    print(f"DEBUG: Retrieved history for thread_id {thread_id}: {history}") 
+    # print(f"DEBUG: Retrieved history for thread_id {thread_id}: {history}") 
 
     return jsonify([
         {
@@ -132,6 +133,18 @@ def history(thread_id):
         }
         for role,response,status,timestamp in history
     ])
+@app.route("/tables/<thread_id>", methods=["GET"])
+def get_tables(thread_id):
+    schema = get_chat_tables(thread_id)
+    return jsonify({
+        "tables": schema
+    })
+
+@app.route("/tables/<thread_id>/<table_name>", methods=["GET"])
+def get_schema(thread_id, table_name):
+    schema = get_chat_table_schema(thread_id, table_name)
+    return jsonify(schema)
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=6969)
