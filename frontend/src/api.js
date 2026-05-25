@@ -19,3 +19,18 @@ export const resumeChat = async (threadId, answer) => {
 
   return response.data;
 };
+
+export const fetchMessages = async (threadId, page = 1, page_size = 15) => {
+    if(!threadId) return [];
+    try {
+        const response = await axios.get(`${BASE_URL}/history/${threadId}`, {
+            params: { page, page_size }
+        });
+        console.log("Fetched messages:", response.data);
+        return response.data || [];
+    }
+    catch(err) {
+        console.error("Failed to fetch messages:", err);
+        return [];
+    }
+};

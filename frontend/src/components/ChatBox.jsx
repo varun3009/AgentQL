@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { sendMessage, resumeChat } from "../api";
+import { useState,useEffect, useRef } from "react";
+import { sendMessage, resumeChat, fetchMessages } from "../api";
 import { statusEnum, roleEnum } from "../enums/llm_response";
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import FaceIcon from '@mui/icons-material/Face';
@@ -10,6 +10,12 @@ export default function ChatBox({ threadId, setThreadId }) {
   const [input, setInput] = useState("");
   const [waitingForResume, setWaitingForResume] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isscroll, setIsScroll] = useState(false);
+
+const chatBodyRef = useRef(null);
 
   const handleSend = async () => {
 
@@ -18,6 +24,8 @@ export default function ChatBox({ threadId, setThreadId }) {
     const userMessage = {
       role: roleEnum.USER,
       content: input,
+      timestamp: new Date(),
+      status: statusEnum.COMPLETED,
     };
 
 
@@ -48,6 +56,8 @@ export default function ChatBox({ threadId, setThreadId }) {
           {
             role: roleEnum.AGENT,
             content: response.response,
+            status: response.status,
+            timestamp: response.timestamp || new Date(),
           },
         ]);
         setWaitingForResume(response.status === statusEnum.INTERRUPT);
@@ -57,6 +67,8 @@ export default function ChatBox({ threadId, setThreadId }) {
         {
           role: roleEnum.AGENT,
           content: "Server error.",
+          status: statusEnum.COMPLETED,
+          timestamp: response.timestamp || new Date(),
         },
       ]);
     }
@@ -71,6 +83,73 @@ export default function ChatBox({ threadId, setThreadId }) {
     }
   };
 
+  const scrollToBottom = () => {
+    const container = chatBodyRef.current;
+
+    if (!container) return;
+
+    container.scrollTop = container.scrollHeight;
+  };
+
+  useEffect(() => {
+    async function fetchInitialMessages() {
+      if(threadId) {
+        let res = await fetchMessages(threadId);
+        setMessages(() => [...res]);
+      }
+    }
+    fetchInitialMessages();
+  }, [threadId]);
+
+  useEffect(() =>{
+    if(isscroll) {
+      return;
+    }
+    setTimeout(() => {
+          scrollToBottom();
+        }, 0);
+  }, [messages]);
+
+  const loadMoreMessages = async () => {
+    if (!threadId || loadingMore || !hasMore) return;
+
+    const container = chatBodyRef.current;
+    const oldScrollHeight = container.scrollHeight;
+
+    setLoadingMore(true);
+
+    try {
+      const res = await fetchMessages(threadId, page + 1, 15);
+
+      if (!res || res.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      setMessages((prev) => [...res, ...prev]);
+      setPage((prev) => prev + 1);
+
+      setTimeout(() => {
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop = newScrollHeight - oldScrollHeight;
+      }, 0);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleScroll = () => {
+    const container = chatBodyRef.current;
+
+    if (!container) return;
+
+    if (container.scrollTop === 0) {
+      setIsScroll(true);
+      loadMoreMessages();
+      setTimeout(() => setIsScroll(false), 100);
+    }
+  };
+
   return (
 
     <div className="container-fluid h-100 py-0 px-0">
@@ -79,19 +158,33 @@ export default function ChatBox({ threadId, setThreadId }) {
         <div className="col-md-12 col-lg-12 col-xl-12 ">
 
           <div className="card h-100" id="chat2">
-            <div className="card-body" data-mdb-perfect-scrollbar-init style={{position: "relative", height: "60vh"}}>
+            <div
+              ref={chatBodyRef}
+              onScroll={handleScroll}
+              className="card-body"
+              style={{
+                position: "relative",
+                height: "60vh",
+                overflowY: "auto",
+              }}
+            >
+              {loadingMore && (
+                <div className="text-center text-muted small mb-2">
+                  Loading older messages...
+                </div>
+              )}
 
-                <div>
+              <div>
                 {messages.map((msg, index) => (
                   <div
-                    key={index}
+                    key={msg.id || index}
                     className={`d-flex flex-row justify-content-${
                       msg.role === roleEnum.USER ? "end" : "start"
                     }`}
                   >
-                    {(msg.role === roleEnum.AGENT && (
+                    {msg.role === roleEnum.AGENT && (
                       <SmartToyIcon style={{ width: "40px", height: "40px" }} />
-                    ))}
+                    )}
 
                     <div>
                       <p
@@ -109,37 +202,28 @@ export default function ChatBox({ threadId, setThreadId }) {
                           msg.role === roleEnum.USER ? "end" : "start"
                         }`}
                       >
-                        {new Date().toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {msg.timestamp
+                          ? new Date(
+                              typeof msg.timestamp === "string"
+                                ? msg.timestamp.replace(" ", "T")
+                                : msg.timestamp
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
                       </p>
                     </div>
-                    {(msg.role === roleEnum.USER && (
-                      <FaceIcon className="ms-3" style={{ width: "40px", height: "40px" }} />
-                    ))}
+
+                    {msg.role === roleEnum.USER && (
+                      <FaceIcon
+                        className="ms-3"
+                        style={{ width: "40px", height: "40px" }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
-
-              {/* <div className="d-flex flex-row justify-content-start">
-                <SmartToyIcon style={{width: "40px", height: "100%"}}/>
-                <div>
-                  <p className="small p-2 ms-3 mb-1 rounded-3 bg-body-tertiary">What are you doing
-                    tomorrow? Can we come up a bar?</p>
-                  <p className="small ms-3 mb-3 rounded-3 text-muted text-start">23:58</p>
-                </div>
-              </div>
-
-              <div className="d-flex flex-row justify-content-end mb-4 pt-1">
-                <div>
-                  <p className="small p-2 me-3 mb-1 text-white rounded-3 bg-primary">Long time no see! Tomorrow
-                    office. will
-                    be free on sunday.</p>
-                  <p className="small me-3 mb-3 rounded-3 text-muted d-flex justify-content-end">00:06</p>
-                </div>
-                <FaceIcon style={{width: "40px", height: "100%"}}/>
-              </div> */}
             </div>
             <div className="card-footer text-muted d-flex justify-content-start align-items-center p-3">
               <FaceIcon className="me-3" style={{width: "40px", height: "100%"}}/>

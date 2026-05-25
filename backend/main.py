@@ -89,6 +89,10 @@ def clarifier_node(state: GraphState, config: RunnableConfig):
         "clarified": True
     }
 
+def route_from_clarifier(state):
+    if state.get("clarified"):
+        return "sql_generator"
+    return "clarifier"
 
 def sql_generator_node(state: GraphState, config: RunnableConfig):
     response = sql_gen_chain.invoke(
@@ -184,7 +188,13 @@ def build_graph():
     graph_builder.add_edge("general_chat", END)
 
     graph_builder.add_edge("schema_reader", "clarifier")
-    graph_builder.add_edge("clarifier", "sql_generator")
+    graph_builder.add_conditional_edges("clarifier",
+        route_from_clarifier,
+        {
+            "clarifier": "clarifier",
+            "sql_generator": "sql_generator"
+        }
+    )
     graph_builder.add_edge("sql_generator", "safety_checker")
 
     graph_builder.add_conditional_edges(

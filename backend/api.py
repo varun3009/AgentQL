@@ -5,6 +5,7 @@ import uuid
 from main import graph
 from enums.llm_status import LLMStatus, Role
 from flask_cors import CORS
+from chat_history import put_chat_history, get_chat_history
 
 
 app = Flask(__name__)
@@ -18,12 +19,15 @@ def extract_response(events, thread_id=None):
             interrupt_obj = event["__interrupt__"][0]
             question = interrupt_obj.value.get("query", "Additional details required.")
 
-            return {
+            res = {
                 "role": Role.AGENT.value,
                 "status": LLMStatus.INTERRUPT.value,
                 "response": question,
                 "thread_id": thread_id
             }
+
+            put_chat_history(thread_id, Role.AGENT.value, question, LLMStatus.INTERRUPT.value)
+            return res
 
         for node_name, value in event.items():
             if not isinstance(value, dict):
@@ -40,6 +44,8 @@ def extract_response(events, thread_id=None):
 
             elif isinstance(last, ToolMessage):
                 final_response = last.content.strip()
+
+    put_chat_history(thread_id, Role.AGENT.value, final_response, LLMStatus.COMPLETED.value)
 
     return {
         "role": Role.AGENT.value,
@@ -66,6 +72,8 @@ def chat():
             "thread_id": thread_id
         }
     }
+
+    put_chat_history(thread_id, Role.HUMAN.value, message, LLMStatus.COMPLETED.value)
 
     events = graph.stream(
         {
@@ -95,6 +103,8 @@ def resume():
         }
     }
 
+    put_chat_history(thread_id, Role.HUMAN.value, answer, LLMStatus.COMPLETED.value)
+
     events = graph.stream(
         Command(resume={"data": answer}),
         config=config
@@ -102,6 +112,26 @@ def resume():
 
     return jsonify(extract_response(events, thread_id=thread_id))
 
+@app.route("/history/<thread_id>", methods=["GET"])
+def history(thread_id):
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 15))
+
+    history = get_chat_history(thread_id, page=page, page_size=page_size)
+
+    history.sort(key=lambda x: x[3])
+
+    print(f"DEBUG: Retrieved history for thread_id {thread_id}: {history}") 
+
+    return jsonify([
+        {
+            "role": role,
+            "content": response,
+            "status": status,
+            "timestamp": timestamp
+        }
+        for role,response,status,timestamp in history
+    ])
 
 if __name__ == "__main__":
     app.run(debug=True, port=6969)
