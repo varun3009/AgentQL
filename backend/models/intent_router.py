@@ -7,7 +7,7 @@ from agent_class import IntentResponse
 
 load_dotenv()
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-20b",
     temperature=0,
     api_key=os.getenv("RESPONSE_API_KEY")
 )
